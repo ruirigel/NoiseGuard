@@ -11,6 +11,7 @@ import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.os.Bundle
 import android.os.Vibrator
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -43,6 +44,9 @@ class MainActivity : ComponentActivity() {
 
         // Solicita permissão para o microfone
         requestMicrophonePermission()
+
+        // Configura para manter a tela sempre ligada
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         setContent {
             NoiseGuardTheme {
@@ -135,7 +139,7 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
                             val pattern = longArrayOf(0, 500, 500)
                             vibrator.vibrate(pattern, 0)
 
-                            delay(5000)
+                            delay(3600000)
 
                             mediaPlayer?.stop()
                             vibrator.cancel()
