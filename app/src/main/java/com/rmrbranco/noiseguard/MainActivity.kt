@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package com.rmrbranco.noiseguard
 
 import android.Manifest
@@ -77,10 +75,17 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
     var currentDecibels by remember { mutableDoubleStateOf(0.0) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    @Suppress("DEPRECATION") val vibrator =
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
     var audioRecord: AudioRecord?
     var volumeAdjustmentJob: Job? = null
+
+    Text(
+        text = soundLevel.value,
+        modifier = modifier,
+        color = Color.White // Define o texto em branco
+    )
 
     LaunchedEffect(Unit) {
         val permissionGranted = ContextCompat.checkSelfPermission(
@@ -117,11 +122,13 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
                             0.0
                         }
 
-                        soundLevel.value = "Nível de som em tempo real: ${currentDecibels.toInt()} dB"
+                        soundLevel.value =
+                            "Nível de som em tempo real: ${currentDecibels.toInt()} dB"
 
                         if (currentDecibels > 65) {
                             alarmActive = true
-                            soundLevel.value = "Nível de Som detectado: ${currentDecibels.toInt()} dB"
+                            soundLevel.value =
+                                "Nível de Som detectado: ${currentDecibels.toInt()} dB"
                             currentDecibels = 0.0 // Reinicia currentDecibels
 
                             audioRecord?.stop()
@@ -137,6 +144,7 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
                             }
 
                             val pattern = longArrayOf(0, 500, 500)
+                            @Suppress("DEPRECATION")
                             vibrator.vibrate(pattern, 0)
 
                             delay(3600000)
