@@ -125,7 +125,7 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
                         soundLevel.value =
                             "Nível de som em tempo real: ${currentDecibels.toInt()} dB"
 
-                        if (currentDecibels > 65) {
+                        if (currentDecibels > 60) {
                             alarmActive = true
                             soundLevel.value =
                                 "Nível de Som detectado: ${currentDecibels.toInt()} dB"
