@@ -167,7 +167,7 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
                                 vibrator.vibrate(pattern, 0)
 
                                 // Aguarda uma hora antes de parar o alarme
-                                delay(5000)
+                                delay(3600000)
 
                                 // Para o alarme e libera recursos
                                 mediaPlayer?.stop()
