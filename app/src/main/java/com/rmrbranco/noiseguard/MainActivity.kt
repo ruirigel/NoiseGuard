@@ -76,6 +76,7 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
     val soundLevel = remember { mutableStateOf("Nível de Som: Aguardando...") }
     var alarmActive by remember { mutableStateOf(false) }
     var currentDecibels by remember { mutableDoubleStateOf(0.0) }
+    var consecutiveHighCount by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     @Suppress("DEPRECATION") val vibrator =
@@ -128,47 +129,61 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
                         soundLevel.value =
                             "Nível de som em tempo real: ${currentDecibels.toInt()} dB"
 
+                        // Se o nível de som é maior ou igual a 60 dB
                         if (currentDecibels >= 60) {
-                            alarmActive = true
-                            soundLevel.value =
-                                "Nível de Som detectado: ${currentDecibels.toInt()} dB"
-                            currentDecibels = 0.0 // Reinicia currentDecibels
+                            consecutiveHighCount++
 
                             audioRecord?.stop()
+                            playTone()
+                            audioRecord?.startRecording()
 
-                            if (mediaPlayer == null) {
-                                playTone()
-                                mediaPlayer = MediaPlayer.create(context, R.raw.alarm_sound).apply {
-                                    isLooping = true
-                                    start()
+                            soundLevel.value = "Detectado: $consecutiveHighCount vezes"
+
+
+                            // Verifica se o contador atingiu 5
+                            if (consecutiveHighCount >= 5) {
+
+                                consecutiveHighCount = 0
+
+                                alarmActive = true
+                                soundLevel.value =
+                                    "Alarme ativado! Nível de Som detectado: ${currentDecibels.toInt()} dB"
+
+                                // Para a gravação de áudio
+                                audioRecord?.stop()
+
+                                if (mediaPlayer == null) {
+                                    mediaPlayer =
+                                        MediaPlayer.create(context, R.raw.alarm_sound).apply {
+                                            isLooping = true
+                                            start()
+                                        }
+                                    volumeAdjustmentJob = adjustVolumeBasedOnTime(mediaPlayer!!)
                                 }
 
-                                // Inicia o ajuste de volume com base no horário
-                                volumeAdjustmentJob = adjustVolumeBasedOnTime(mediaPlayer!!)
+                                // Vibra o dispositivo
+                                val pattern = longArrayOf(0, 500, 500)
+                                @Suppress("DEPRECATION")
+                                vibrator.vibrate(pattern, 0)
+
+                                // Aguarda uma hora antes de parar o alarme
+                                delay(5000)
+
+                                // Para o alarme e libera recursos
+                                mediaPlayer?.stop()
+                                vibrator.cancel()
+                                mediaPlayer?.release()
+                                mediaPlayer = null
+                                alarmActive = false
+                                volumeAdjustmentJob?.cancel()
+
+                                // Reinicia a gravação após o alarme
+                                audioRecord?.startRecording()
                             }
-
-                            val pattern = longArrayOf(0, 500, 500)
-                            @Suppress("DEPRECATION")
-                            vibrator.vibrate(pattern, 0)
-
-                            delay(3600000)
-
-                            mediaPlayer?.stop()
-                            vibrator.cancel()
-                            mediaPlayer?.release()
-                            mediaPlayer = null
-                            alarmActive = false
-
-                            // Cancela o ajuste de volume quando o alarme parar
-                            volumeAdjustmentJob?.cancel()
-
-                            delay(5000)
-
-                            audioRecord?.startRecording()
                         }
                     }
 
-                    delay(100)
+                    delay(100) // Delay para evitar uso excessivo da CPU
                 }
             }
         } else {
