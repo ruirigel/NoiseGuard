@@ -33,6 +33,9 @@ import androidx.compose.foundation.background
 import kotlinx.coroutines.CoroutineScope
 import java.util.Calendar
 import kotlinx.coroutines.Job
+import android.media.AudioManager
+import android.media.AudioTrack
+import kotlin.math.sin
 
 class MainActivity : ComponentActivity() {
 
@@ -125,7 +128,7 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
                         soundLevel.value =
                             "Nível de som em tempo real: ${currentDecibels.toInt()} dB"
 
-                        if (currentDecibels > 60) {
+                        if (currentDecibels >= 60) {
                             alarmActive = true
                             soundLevel.value =
                                 "Nível de Som detectado: ${currentDecibels.toInt()} dB"
@@ -134,6 +137,7 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
                             audioRecord?.stop()
 
                             if (mediaPlayer == null) {
+                                playTone()
                                 mediaPlayer = MediaPlayer.create(context, R.raw.alarm_sound).apply {
                                     isLooping = true
                                     start()
@@ -184,13 +188,45 @@ fun adjustVolumeBasedOnTime(mediaPlayer: MediaPlayer): Job {
         while (true) {
             val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
             if (currentHour in 20..23 || currentHour in 0..9) {
-                mediaPlayer.setVolume(0.5f, 0.5f) // 50% de volume
+                mediaPlayer.setVolume(0.3f, 0.3f) // 50% de volume
             } else {
                 mediaPlayer.setVolume(1.0f, 1.0f) // 100% de volume
             }
             delay(60000) // Verifica o horário a cada minuto
         }
     }
+}
+
+// Função que emite um beep de aviso
+fun playTone(frequency: Int = 1300, durationMs: Int = 3000) {
+    val sampleRate = 44100 // Taxa de amostragem padrão para áudio
+    val numSamples = durationMs * sampleRate / 1000
+    val audioBuffer = ShortArray(numSamples)
+
+    // Gera a onda senoidal para a frequência desejada
+    for (i in audioBuffer.indices) {
+        val angle = 2.0 * Math.PI * i / (sampleRate / frequency)
+        audioBuffer[i] = (sin(angle) * Short.MAX_VALUE).toInt().toShort()
+    }
+
+    // Configura o AudioTrack para reproduzir o som
+    @Suppress("DEPRECATION") val audioTrack = AudioTrack(
+        AudioManager.STREAM_MUSIC,
+        sampleRate,
+        AudioFormat.CHANNEL_OUT_MONO,
+        AudioFormat.ENCODING_PCM_16BIT,
+        audioBuffer.size * 2, // Tamanho do buffer em bytes
+        AudioTrack.MODE_STATIC
+    )
+
+    // Carrega e toca o som
+    audioTrack.write(audioBuffer, 0, audioBuffer.size)
+    audioTrack.play()
+
+    // Libera o AudioTrack após a duração especificada
+    Thread.sleep(durationMs.toLong())
+    audioTrack.stop()
+    audioTrack.release()
 }
 
 @Preview(showBackground = true)
@@ -200,3 +236,4 @@ fun SoundMonitorPreview() {
         SoundMonitor()
     }
 }
+
