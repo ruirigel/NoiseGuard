@@ -36,6 +36,11 @@ import kotlinx.coroutines.Job
 import android.media.AudioManager
 import android.media.AudioTrack
 import kotlin.math.sin
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
 
 class MainActivity : ComponentActivity() {
 
@@ -125,6 +130,8 @@ fun SoundMonitor(modifier: Modifier = Modifier) {
                         } else {
                             0.0
                         }
+
+                        writeToLog(context, currentDecibels)
 
                         soundLevel.value =
                             "Nível de som em tempo real: ${currentDecibels.toInt()} dB"
@@ -244,6 +251,27 @@ fun playTone(frequency: Int = 1300, durationMs: Int = 3000) {
     audioTrack.release()
 }
 
+fun writeToLog(context: Context, decibelLevel: Double) {
+    val currentTime = Date()
+
+    // Formatação da data para o timestamp e para o nome do arquivo
+    val dateFormat = SimpleDateFormat("dd/MM/yy,HH:mm:ss.SSS", Locale.getDefault())
+    val fileDateFormat = SimpleDateFormat("MM_yyyy", Locale.getDefault())
+
+    val timestamp = dateFormat.format(currentTime)
+    val fileDate = fileDateFormat.format(currentTime)
+
+    // Nome do arquivo com o mês e ano
+    val logFileName = "noise_$fileDate.log"
+    val logFile = File(context.filesDir, logFileName)
+
+    // Entrada no log com timestamp e valor de decibéis
+    val logEntry = "$timestamp,${decibelLevel.toInt()}\n"
+
+    // Escreve a entrada no log
+    logFile.appendText(logEntry)
+}
+
 @Preview(showBackground = true)
 @Composable
 fun SoundMonitorPreview() {
@@ -251,4 +279,3 @@ fun SoundMonitorPreview() {
         SoundMonitor()
     }
 }
-
